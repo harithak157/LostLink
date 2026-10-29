@@ -29,7 +29,7 @@ The project separates the AI's automated matching (which calculates text similar
 - Artificial Intelligence (Rule-Based Systems, A* Search)
 
 ## Project Structure
-
+```text
 lostlink/
 ├── data/
 │   ├── items.json
@@ -56,7 +56,7 @@ lostlink/
 ├── main.py
 ├── server.py
 └── README.txt
-
+```
 ## Getting Started
 
 ### Prerequisites
@@ -69,7 +69,7 @@ lostlink/
 
 Clone the repository (or copy the project folder to your local machine):
 
-git clone https://github.com/your-username/lostlink.git
+git clone https://github.com/harithak157/lostlink.git
 cd lostlink
 
 ### Run the Application
@@ -111,4 +111,4 @@ Dataset coverage, AI model constraints, and the lack of a persistent relational 
 ## Author
 
 [haritha157]
-GitHub: [https://github.com/harithak15]
+GitHub: [https://github.com/harithak157]
