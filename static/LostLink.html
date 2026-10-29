@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LostLink</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f6f4;--sf:#fff;--tx:#14231f;--mu:#5d6f69;--ln:#d5dfdb;--ac:#0b6b5a;--act:#fff;--am:#c77700;--rd:#b3261e;--gn:#1b7f3b;--soft:#e4efeb}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1815;--sf:#17231f;--tx:#e6efec;--mu:#92a8a1;--ln:#2a3b36;--ac:#4fd1b5;--act:#06231c;--am:#f0a73a;--rd:#ff8a80;--gn:#6fd68f;--soft:#1e2e29}}
+:root[data-theme="dark"]{--bg:#0f1815;--sf:#17231f;--tx:#e6efec;--mu:#92a8a1;--ln:#2a3b36;--ac:#4fd1b5;--act:#06231c;--am:#f0a73a;--rd:#ff8a80;--gn:#6fd68f;--soft:#1e2e29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Figtree,system-ui,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque",Figtree,sans-serif;margin:0}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--ln);background:var(--sf)}
+.logo{font:700 22px "Bricolage Grotesque",sans-serif}.logo i{font-style:normal;color:var(--ac)}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:0;color:var(--mu);padding:8px 12px;border-radius:8px;font:500 14px inherit;cursor:pointer}
+nav button.on{background:var(--soft);color:var(--tx)}
+nav b{background:var(--rd);color:#fff;border-radius:9px;padding:0 6px;font-size:11px;margin-left:4px}
+.who{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mu)}
+main{max-width:980px;margin:0 auto;padding:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:10px}.th{width:72px;height:72px;border-radius:8px;object-fit:cover;background:var(--soft);flex:none;display:grid;place-items:center;color:var(--mu);font-size:11px}
+.card h3{font-size:16px}.meta{color:var(--mu);font-size:13px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--soft)}
+.lost{color:var(--rd)}.found{color:var(--gn)}.pend{color:var(--am)}
+button.pri,button.sec{font:600 14px inherit;border-radius:8px;padding:8px 14px;cursor:pointer;border:1px solid var(--ac)}
+button.pri{background:var(--ac);color:var(--act)}button.sec{background:none;color:var(--ac)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+form{display:grid;gap:12px;max-width:560px}
+label{display:grid;gap:4px;font-weight:600;font-size:13px}
+label small{font-weight:400;color:var(--mu)}
+input,select,textarea{font:15px inherit;padding:9px 10px;border:1px solid var(--ln);border-radius:8px;background:var(--sf);color:var(--tx);width:100%}
+.bar{height:6px;border-radius:3px;background:var(--soft);overflow:hidden}.bar span{display:block;height:100%;background:var(--ac)}
+.sc{font:700 22px "Bricolage Grotesque",sans-serif;color:var(--ac)}
+.bd{display:grid;grid-template-columns:70px 1fr;gap:3px 8px;font-size:12px;color:var(--mu);align-items:center}
+.sec-h{margin:22px 0 10px;font-size:18px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.tools input,.tools select{width:auto;flex:1;min-width:140px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stats div{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px}.stats b{font:700 26px "Bricolage Grotesque",sans-serif;display:block}
+.empty{padding:28px;text-align:center;color:var(--mu);border:1px dashed var(--ln);border-radius:12px}
+dialog{border:1px solid var(--ln);border-radius:14px;background:var(--sf);color:var(--tx);max-width:440px;width:92%}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:9}
+.note{background:var(--soft);padding:10px 12px;border-radius:8px;font-size:13px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<header><div class="logo">Lost<i>Link</i></div><nav id="nav"></nav>
+<div class="who"><span>Signed in as</span><select id="role" style="width:auto"><option value="s">Student</option><option value="a">Administrator</option></select></div></header>
+<main id="app"></main><dialog id="dlg"></dialog>
+<script>
+var LOCS=["Classrooms & lecture halls","Laboratories","Library","Cafeteria & food courts","Hostels","Sports facilities","College buses","Administrative offices"];
+var GRP=[0,0,0,1,2,1,2,0];
+var CATS=["ID card","Wallet","Keys","Earphones","Water bottle","Books","Phone / laptop","Bag","Other"];
+var SYN={earbuds:"earphones",airpods:"earphones",headphones:"earphones",headphone:"earphones",earphone:"earphones",flask:"bottle",bottle:"bottle",purse:"wallet",wallet:"wallet",mobile:"phone",smartphone:"phone",phone:"phone",laptop:"computer",backpack:"bag",bag:"bag",identity:"id",idcard:"id",id:"id",card:"id",notebook:"book",textbook:"book",book:"book",books:"book",key:"keys",keys:"keys",keychain:"keys"};
+var STOP="a an the of in on at is it my its with and or to for was has have this that very some".split(" ");
+var ME="You",S={items:[],claims:[]},V="browse",Q={t:"",c:"",h:null};
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function save(){try{localStorage.setItem("lostlink",JSON.stringify(S))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem("lostlink"));if(d&&d.items)S=d}catch(e){}}
+function toast(m){var t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2400)}
+function tok(s){var o={};String(s||"").toLowerCase().split(/[^a-z0-9]+/).forEach(function(w){if(!w||STOP.indexOf(w)>-1)return;if(SYN[w])w=SYN[w];else if(w.length>3&&w.slice(-1)=="s")w=w.slice(0,-1);o[w]=1});return Object.keys(o)}
+function cos(a,b){if(!a.length||!b.length)return 0;var n=0;a.forEach(function(x){if(b.indexOf(x)>-1)n++});return n/Math.sqrt(a.length*b.length)}
+function itxt(i){return i.name+" "+i.cat+" "+i.desc}
+function textSim(a,b){return Math.min(1,.8*cos(tok(itxt(a)),tok(itxt(b)))+(a.cat==b.cat?.2:0))}
+function locSim(a,b){return a.loc==b.loc?1:GRP[a.loc]==GRP[b.loc]?.55:.15}
+function timeSim(l,f){var h=(f.dt-l.dt)/36e5;if(h<-2)return .1;return Math.exp(-Math.abs(h)/48)}
+function imgSim(a,b){if(!a.hist||!b.hist)return null;var s=0;for(var i=0;i<64;i++)s+=Math.min(a.hist[i],b.hist[i]);return s}
+function score(l,f){var t=textSim(l,f),lo=locSim(l,f),ti=timeSim(l,f),im=imgSim(l,f),s;
+ if(im==null)s=.5*t+.28*lo+.22*ti;else s=.4*t+.25*im+.2*lo+.15*ti;return{s:s,t:t,i:im,l:lo,d:ti}}
+function matchesFor(l){return S.items.filter(function(f){return f.type=="found"&&f.status!="returned"}).map(function(f){return{f:f,m:score(l,f)}}).filter(function(x){return x.m.s>=.45}).sort(function(a,b){return b.m.s-a.m.s})}
+function isAdmin(){return $("role").value=="a"}
+function pct(x){return Math.round(x*100)+"%"}
+function fmt(t){return new Date(t).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
+function proc(file){return new Promise(function(res){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){
+ var c=document.createElement("canvas");c.width=c.height=96;var x=c.getContext("2d");var s=Math.min(im.width,im.height);x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,96,96);
+ var th=c.toDataURL("image/jpeg",.6),d=x.getImageData(0,0,96,96).data,h=new Array(64).fill(0),n=0;
+ for(var i=0;i<d.length;i+=4){h[(d[i]>>6)*16+(d[i+1]>>6)*4+(d[i+2]>>6)]++;n++}
+ res({thumb:th,hist:h.map(function(v){return v/n})})};im.onerror=function(){res(null)};im.src=r.result};r.onerror=function(){res(null)};r.readAsDataURL(file)})}
+function status(i){if(i.status=="returned")return["Returned","found"];
+ var p=S.claims.some(function(c){return c.item==i.id&&c.st=="pending"});if(p)return["Claim pending","pend"];
+ if(i.type=="lost"&&matchesFor(i).length)return["Match found","pend"];return["Open",""]}
+function card(i,x){var st=status(i);return '<div class="card"><div class="row">'+(i.thumb?'<img class="th" alt="" src="'+i.thumb+'">':'<div class="th">No photo</div>')+
+ '<div><span class="tag '+i.type+'">'+(i.type=="lost"?"Lost":"Found")+'</span> <span class="tag '+st[1]+'">'+st[0]+'</span><h3>'+esc(i.name)+'</h3><div class="meta">'+esc(i.cat)+'</div></div></div>'+
+ '<div>'+esc(i.desc)+'</div><div class="meta">'+esc(LOCS[i.loc])+' · '+fmt(i.dt)+' · '+esc(i.by)+'</div>'+(x||"")+'</div>'}
+function nav(){var n=0;S.items.forEach(function(i){if(i.type=="lost"&&i.by==ME&&i.status!="returned")n+=matchesFor(i).length});
+ var t=[["browse","Browse"],["lost","Report lost"],["found","Report found"],["mine","My reports"+(n?"<b>"+n+"</b>":"")]];if(isAdmin())t.push(["admin","Dashboard"]);
+ $("nav").innerHTML=t.map(function(x){return '<button data-v="'+x[0]+'" class="'+(V==x[0]?"on":"")+'">'+x[1]+'</button>'}).join("")}
+function render(){if(V=="admin"&&!isAdmin())V="browse";nav();var f={browse:vBrowse,lost:function(){return vForm("lost")},found:function(){return vForm("found")},mine:vMine,admin:vAdmin}[V];$("app").innerHTML=f();if(V=="lost"||V=="found")bindForm(V)}
+function vBrowse(){var items=S.items.filter(function(i){return i.status!="returned"});
+ var qt=tok(Q.t);items=items.map(function(i){var s=0;if(qt.length)s+=cos(qt,tok(itxt(i)));if(Q.h&&i.hist)s+=imgSim({hist:Q.h},i);return{i:i,s:s}});
+ items=items.filter(function(x){return(!Q.c||x.i.cat==Q.c)&&(!qt.length&&!Q.h||x.s>.1)});
+ items.sort(function(a,b){return(qt.length||Q.h)?b.s-a.s:b.i.dt-a.i.dt});
+ return '<h2>Search lost and found</h2><div class="tools"><input id="q" placeholder="Search by name or description" value="'+esc(Q.t)+'" aria-label="Search"><select id="qc"><option value="">All categories</option>'+CATS.map(function(c){return '<option'+(Q.c==c?" selected":"")+'>'+c+'</option>'}).join("")+'</select>'+
+ '<label style="font-weight:500">Search by photo<input type="file" id="qi" accept="image/*"></label>'+(Q.h?'<button class="sec" data-a="clrimg">Clear photo</button>':"")+'</div>'+
+ (items.length?'<div class="grid">'+items.map(function(x){var i=x.i;return card(i,i.type=="found"&&i.by!=ME?'<button class="pri" data-a="claim" data-id="'+i.id+'">This is mine</button>':"")}).join("")+'</div>':'<div class="empty">Nothing matches yet. Report your item and LostLink will keep looking.</div>')}
+function vForm(t){var L=t=="lost";return '<h2>'+(L?"Report a lost item":"Report a found item")+'</h2><p class="meta">'+(L?"Tell us what you lost. We will compare it with every found report.":"Thanks for helping. Hand the item to the administrative office or keep it safe until the owner is verified.")+'</p>'+
+ '<form id="f"><label>Item name<input name="name" required maxlength="60" placeholder="e.g. Black wallet"></label>'+
+ '<label>Category<select name="cat">'+CATS.map(function(c){return '<option>'+c+'</option>'}).join("")+'</select></label>'+
+ '<label>Description<textarea name="desc" rows="3" required placeholder="Colour, brand, size, condition"></textarea></label>'+
+ '<label>'+(L?"Last known location":"Where you found it")+'<select name="loc">'+LOCS.map(function(c,i){return '<option value="'+i+'">'+c+'</option>'}).join("")+'</select></label>'+
+ '<label>'+(L?"Approximate date and time":"Date and time found")+'<input type="datetime-local" name="dt" required></label>'+
+ '<label>Photo'+(L?" (optional)":"")+'<input type="file" name="img" accept="image/*"></label>'+
+ '<label>Private identifying detail<small>'+(L?"Optional. Something only you know. Never shown publicly.":"Something visible only to you and admins, such as a name inside or a wallpaper. Never shown publicly.")+'</small><input name="secret" maxlength="120"></label>'+
+ '<button class="pri" type="submit">Submit report</button></form>'}
+function bindForm(t){var f=$("f"),d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());f.dt.value=d.toISOString().slice(0,16);
+ f.onsubmit=function(e){e.preventDefault();var fd=f,go=function(p){var it={id:"i"+Date.now(),type:t,name:fd.name.value.trim(),cat:fd.cat.value,desc:fd.desc.value.trim(),loc:+fd.loc.value,dt:new Date(fd.dt.value).getTime(),by:ME,secret:fd.secret.value.trim(),status:"open",thumb:p?p.thumb:null,hist:p?p.hist:null};
+  var dup=S.items.filter(function(o){return o.type==t&&o.status!="returned"&&o.loc==it.loc&&Math.abs(o.dt-it.dt)<108e5&&textSim(o,it)>.7})[0];
+  if(dup&&!confirm("This looks like an existing report: "+dup.name+" ("+dup.by+"). Submit anyway?"))return;
+  S.items.unshift(it);save();toast("Report submitted");V="mine";render()};
+  var fi=fd.img.files[0];if(fi)proc(fi).then(go);else go(null)}}
+function vMine(){var mine=S.items.filter(function(i){return i.by==ME});
+ if(!mine.length)return '<h2>My reports</h2><div class="empty">You have not reported anything yet.</div>';
+ return '<h2>My reports</h2><div class="grid">'+mine.map(function(i){var x="";
+  if(i.status=="returned")x='<div class="note">Item returned to its owner.</div>';
+  if(i.type=="lost"&&i.status!="returned"){var m=matchesFor(i);x=m.length?'<div class="meta"><b>Potential matches</b></div>'+m.slice(0,3).map(function(y){return mini(y)}).join(""):'<div class="meta">No matches yet. We will notify you when one appears.</div>'}
+  if(i.type=="found"){S.claims.filter(function(c){return c.item==i.id&&c.st=="pending"}).forEach(function(c){x+=claimBox(c,i)})}
+  return card(i,x)}).join("")+'</div>'}
+function mini(y){var m=y.m,f=y.f;return '<div class="note"><div style="display:flex;justify-content:space-between;align-items:center"><span><b>'+esc(f.name)+'</b><br><span class="meta">'+esc(LOCS[f.loc])+' · '+fmt(f.dt)+'</span></span><span class="sc">'+pct(m.s)+'</span></div>'+
+ '<div class="bd"><span>Text</span><div class="bar"><span style="width:'+pct(m.t)+'"></span></div><span>Photo</span><div class="bar"><span style="width:'+(m.i==null?0:pct(m.i))+'"></span></div><span>Location</span><div class="bar"><span style="width:'+pct(m.l)+'"></span></div><span>Time</span><div class="bar"><span style="width:'+pct(m.d)+'"></span></div></div>'+
+ '<p style="margin:8px 0 0"><button class="pri" data-a="claim" data-id="'+f.id+'">Claim this item</button></p></div>'}
+function claimBox(c,i){var ps=i.secret?pct(cos(tok(c.proof),tok(i.secret))):"n/a";return '<div class="note"><b>'+esc(c.by)+' says this is theirs</b><br>Proof given: “'+esc(c.proof)+'”<br>Your private detail: “'+esc(i.secret||"none recorded")+'” · overlap '+ps+
+ '<p style="margin:8px 0 0;display:flex;gap:8px"><button class="pri" data-a="approve" data-id="'+c.id+'">Verify and return</button><button class="sec" data-a="reject" data-id="'+c.id+'">Reject</button></p></div>'}
+function vAdmin(){var o=S.items.filter(function(i){return i.status!="returned"}),r=S.items.length-o.length,pc=S.claims.filter(function(c){return c.st=="pending"}),dups=[];
+ for(var a=0;a<o.length;a++)for(var b=a+1;b<o.length;b++){var p=o[a],q=o[b];if(p.type==q.type&&p.loc==q.loc&&Math.abs(p.dt-q.dt)<108e5&&textSim(p,q)>.7)dups.push([p,q])}
+ var ms=0;o.filter(function(i){return i.type=="lost"}).forEach(function(l){if(matchesFor(l).length)ms++});
+ var h='<h2>Administrator dashboard</h2><div class="stats"><div><b>'+o.filter(function(i){return i.type=="lost"}).length+'</b>Open lost</div><div><b>'+o.filter(function(i){return i.type=="found"}).length+'</b>Open found</div><div><b>'+ms+'</b>With matches</div><div><b>'+pc.length+'</b>Pending claims</div><div><b>'+r+'</b>Returned</div></div>';
+ h+='<h3 class="sec-h">Pending claims</h3>'+(pc.length?'<div class="grid">'+pc.map(function(c){var i=S.items.filter(function(x){return x.id==c.item})[0];return i?card(i,claimBox(c,i)):""}).join("")+'</div>':'<div class="empty">No claims waiting.</div>');
+ h+='<h3 class="sec-h">Possible duplicate reports</h3>'+(dups.length?dups.map(function(d){return '<div class="card" style="margin-bottom:8px"><b>'+esc(d[0].name)+'</b> ('+esc(d[0].by)+') and <b>'+esc(d[1].name)+'</b> ('+esc(d[1].by)+') · '+esc(LOCS[d[0].loc])+'<div><button class="sec" data-a="del" data-id="'+d[1].id+'">Remove second report</button></div></div>'}).join(""):'<div class="empty">No duplicates detected.</div>');
+ h+='<h3 class="sec-h">Open found items by location</h3><div class="stats">'+LOCS.map(function(l,i){return '<div><b>'+o.filter(function(x){return x.loc==i}).length+'</b>'+esc(l)+'</div>'}).join("")+'</div>';
+ h+='<p style="margin-top:20px"><button class="sec" data-a="reset">Reset demo data</button></p>';return h}
+function claim(id){var f=S.items.filter(function(i){return i.id==id})[0];if(!f)return;var d=$("dlg");
+ d.innerHTML='<form method="dialog" id="cf"><h3>Claim: '+esc(f.name)+'</h3><label>Describe something only the owner would know<small>Contents, marks, wallpaper, name inside. This is not shown publicly.</small><textarea id="pf" rows="3" required></textarea></label><div style="display:flex;gap:8px"><button class="pri" type="submit">Send claim</button><button class="sec" type="button" id="cx">Cancel</button></div></form>';d.showModal();
+ $("cx").onclick=function(){d.close()};
+ $("cf").onsubmit=function(e){e.preventDefault();var p=$("pf").value.trim();if(!p)return;S.claims.push({id:"c"+Date.now(),item:id,by:ME,proof:p,st:"pending"});save();d.close();toast("Claim sent to the finder and administrators");render()}}
+document.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+ if(b.dataset.v){V=b.dataset.v;render();return}var a=b.dataset.a,id=b.dataset.id;if(!a)return;
+ if(a=="claim")claim(id);
+ if(a=="approve"||a=="reject"){var c=S.claims.filter(function(x){return x.id==id})[0];c.st=a=="approve"?"approved":"rejected";if(a=="approve"){S.items.forEach(function(i){if(i.id==c.item)i.status="returned"});toast("Verified. Marked as returned.")}else toast("Claim rejected");save();render()}
+ if(a=="del"){S.items=S.items.filter(function(i){return i.id!=id});save();render()}
+ if(a=="clrimg"){Q.h=null;render()}
+ if(a=="reset"&&confirm("Reset all data to the demo set?")){seed();save();render()}});
+document.addEventListener("input",function(e){if(e.target.id=="q"){Q.t=e.target.value;var p=e.target.selectionStart;render();var q=$("q");q.focus();q.setSelectionRange(p,p)}});
+document.addEventListener("change",function(e){if(e.target.id=="qc"){Q.c=e.target.value;render()}
+ if(e.target.id=="qi"&&e.target.files[0])proc(e.target.files[0]).then(function(p){if(p){Q.h=p.hist;render()}})});
+$("role").onchange=render;
+function seed(){var H=36e5,n=Date.now();function m(t,name,cat,desc,loc,ago,by,sec){return{id:"s"+Math.random().toString(36).slice(2,8),type:t,name:name,cat:cat,desc:desc,loc:loc,dt:n-ago*H,by:by,secret:sec||"",status:"open",thumb:null,hist:null}}
+ S={claims:[],items:[m("lost","Black leather wallet","Wallet","Black wallet with student ID and a blue library card inside",2,5,ME,"photo of a golden retriever as ID photo"),
+ m("found","Black wallet","Wallet","Black leather wallet found on a reading table, has some cards",2,3,"Arjun","Library card with the name Kavya, a 500 rupee note"),
+ m("found","White earbuds case","Earphones","White wireless earbuds case with a small scratch",0,20,"Meera","Left bud missing"),
+ m("lost","AirPods","Earphones","White wireless earphones in a case, lost after the physics lecture",0,26,"Priya"),
+ m("found","Steel water bottle","Water bottle","Navy blue insulated bottle with a dent near the base",3,8,"Rahul","Sticker of a mountain on the bottom"),
+ m("lost","Hostel room keys","Keys","Three keys on a red keychain with a bottle opener",4,30,"Divya"),
+ m("found","Calculus textbook","Books","Thick maths textbook with yellow sticky notes",2,50,"Sanjay","Name Vikram on page 3")]}}
+load();if(!S.items.length){seed();save()}render();
+</script></body></html>

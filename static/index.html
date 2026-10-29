@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LostLink</title>
+<style>
+:root{--bg:#f3f6f4;--sf:#fff;--tx:#14231f;--mu:#5d6f69;--ln:#d5dfdb;--ac:#0b6b5a;--am:#c77700;--rd:#b3261e;--gn:#1b7f3b;--soft:#e4efeb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;margin:0}
+header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--ln);background:var(--sf)}
+.logo{font:700 22px system-ui}.logo i{font-style:normal;color:var(--ac)}
+nav button{background:none;border:0;color:var(--mu);padding:8px 12px;border-radius:8px;cursor:pointer}
+nav button.on{background:var(--soft);color:var(--tx)}
+main{max-width:980px;margin:0 auto;padding:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.th{width:72px;height:72px;border-radius:8px;object-fit:cover;background:var(--soft);flex:none;display:grid;place-items:center;color:var(--mu);font-size:11px}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--soft)}
+.tag.lost{color:var(--rd)}.tag.found{color:var(--gn)}.tag.high{color:var(--gn)}.tag.likely{color:var(--am)}
+.meta{color:var(--mu);font-size:13px}
+button.pri,button.sec{font:600 14px system-ui;border-radius:8px;padding:8px 14px;cursor:pointer;border:1px solid var(--ac)}
+button.pri{background:var(--ac);color:#fff}button.sec{background:none;color:var(--ac)}
+form{display:grid;gap:12px;max-width:560px}label{display:grid;gap:4px;font-weight:600;font-size:13px}
+input,select,textarea{font:15px system-ui;padding:9px 10px;border:1px solid var(--ln);border-radius:8px;background:var(--sf);color:var(--tx);width:100%}
+.bar{height:6px;border-radius:3px;background:var(--soft);overflow:hidden}.bar span{display:block;height:100%;background:var(--ac)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stats div{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px}
+.stats b{font:700 26px system-ui;display:block}
+.note{background:var(--soft);padding:10px 12px;border-radius:8px;font-size:13px;white-space:pre-wrap;font-family:ui-monospace,monospace}
+.empty{padding:28px;text-align:center;color:var(--mu);border:1px dashed var(--ln);border-radius:12px}
+dialog{border:1px solid var(--ln);border-radius:14px;background:var(--sf);color:var(--tx);max-width:600px;width:92%}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+</style></head><body>
+<header>
+  <div class="logo">Lost<i>Link</i></div>
+  <nav id="nav"></nav>
+  <div><label style="font-weight:500;display:inline-block">Signed in as
+    <select id="role" style="width:auto"><option>Student</option><option>Administrator</option></select>
+  </label></div>
+</header>
+<main id="app"></main>
+<dialog id="dlg"></dialog>
+<script>
+const API = "";
+const LOCS = ["Classrooms & lecture halls","Laboratories","Library","Cafeteria & food courts","Hostels","Sports facilities","College buses","Administrative offices"];
+const CATS = ["ID card","Wallet","Keys","Earphones","Water bottle","Books","Phone / laptop","Bag","Other"];
+let V = "browse", ITEMS = [], CLAIMS = [], ME = "You", ROLE = "Student", Q = {t:""};
+
+function $(s){return document.querySelector(s)}
+async function api(path, opts={}){
+  const r = await fetch(API+path, {headers:{"Content-Type":"application/json"}, ...opts});
+  if(!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return r.json();
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function fmt(t){return new Date(t*1000).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
+function isAdmin(){return ROLE==="Administrator"}
+
+async function refresh(){
+  const [a, b] = await Promise.all([api("/api/items"), api("/api/claims")]);
+  ITEMS = a.items; CLAIMS = b.claims; render();
+}
+
+function nav(){
+  const n = ITEMS.filter(i=>i.type==="lost"&&i.reported_by===ME&&i.status!=="returned").length;
+  const tabs = [["browse","Browse"],["lost","Report lost"],["found","Report found"],["mine","My reports"]];
+  if(isAdmin()) tabs.push(["admin","Dashboard"]);
+  $("#nav").innerHTML = tabs.map(([k,l])=>`<button data-v="${k}" class="${V===k?'on':''}">${l}</button>`).join("");
+}
+
+function card(i, extra="", override_status=null){
+  const st = override_status || (i.status==="returned"?"Returned":(i.status==="open"?"Open":"Pending"));
+  return `<div class="card">
+    <div style="display:flex;gap:10px">
+      ${i.thumbnail?`<img class="th" src="${i.thumbnail}" alt="">`:`<div class="th">No photo</div>`}
+      <div>
+        <span class="tag ${i.type}">${i.type}</span>
+        <span class="tag">${st}</span>
+        <h3>${esc(i.name)}</h3>
+        <div class="meta">${esc(i.category)}</div>
+      </div>
+    </div>
+    <div>${esc(i.description)}</div>
+    <div class="meta">${esc(LOCS[i.location_index])} · ${fmt(i.timestamp)} · ${esc(i.reported_by)}</div>
+    ${extra}
+  </div>`;
+}
+
+function vBrowse(){
+  const items = ITEMS.filter(i=>i.status!=="returned");
+  const q = Q.t.toLowerCase();
+  const filtered = items.filter(i => !q || (i.name+i.category+i.description).toLowerCase().includes(q));
+  return `<h2>Search lost and found</h2>
+    <div class="tools">
+      <input id="q" placeholder="Search by name or description" value="${esc(Q.t)}">
+    </div>
+    ${filtered.length?`<div class="grid">${filtered.map(i=>{
+      // Add the "This is mine" button if it's a found item reported by someone else
+      const extra = (i.type === "found" && i.reported_by !== ME) 
+        ? `<button class="pri" data-a="claim" data-id="${i.id}" style="margin-top:8px;">This is mine</button>` 
+        : "";
+      return card(i, extra);
+    }).join("")}</div>`:`<div class="empty">No reports yet.</div>`}`;
+}
+function vForm(type){
+  const L = type==="lost";
+  return `<h2>${L?"Report a lost item":"Report a found item"}</h2>
+    <form id="f">
+      <label>Item name<input name="name" required maxlength="60"></label>
+      <label>Category<select name="cat">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></label>
+      <label>Description<textarea name="desc" rows="3" required></textarea></label>
+      <label>${L?"Last known location":"Where you found it"}
+        <select name="loc">${LOCS.map((c,i)=>`<option value="${i}">${c}</option>`).join("")}</select></label>
+      <label>Date and time<input type="datetime-local" name="dt" required></label>
+      <label>Photo<input type="file" name="img" accept="image/*"></label>
+      <label>Private identifying detail<input name="secret" maxlength="120"></label>
+      <button class="pri" type="submit">Submit report</button>
+    </form>`;
+}
+
+function bindForm(type){
+  const f = $("#f");
+  const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  f.dt.value = d.toISOString().slice(0,16);
+  f.onsubmit = async (e)=>{
+    e.preventDefault();
+    const fd = f;
+    const payload = {
+      type,
+      name: fd.name.value.trim(),
+      category: fd.cat.value,
+      description: fd.desc.value.trim(),
+      location_index: +fd.loc.value,
+      timestamp: new Date(fd.dt.value).getTime()/1000,
+      reported_by: ME,
+      secret: fd.secret.value.trim(),
+    };
+    const fi = fd.img.files[0];
+    if(fi){
+      const proc = await new Promise(res=>{
+        const r = new FileReader();
+        r.onload = ()=>{
+          const im = new Image();
+          im.onload = ()=>{
+            const c = document.createElement("canvas"); c.width=c.height=96;
+            const x = c.getContext("2d");
+            const s = Math.min(im.width, im.height);
+            x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,96,96);
+            const d = x.getImageData(0,0,96,96).data;
+            const h = new Array(64).fill(0); let n=0;
+            for(let i=0;i<d.length;i+=4){h[(d[i]>>6)*16+(d[i+1]>>6)*4+(d[i+2]>>6)]++;n++}
+            res({thumb:c.toDataURL("image/jpeg",.6), hist:h.map(v=>v/n)});
+          };
+          im.onerror = ()=>res(null);
+          im.src = r.result;
+        };
+        r.onerror = ()=>res(null);
+        r.readAsDataURL(fi);
+      });
+      if(proc){ payload.thumbnail = proc.thumb; payload.histogram = proc.hist; }
+    }
+    try{
+      await api("/api/items", {method:"POST", body:JSON.stringify(payload)});
+      V = "mine"; await refresh();
+    }catch(err){ alert("Submit failed: "+err.message); }
+  };
+}
+
+async function vMine(){
+  const mine = ITEMS.filter(i=>i.reported_by===ME);
+  if(!mine.length) return `<h2>My reports</h2><div class="empty">Nothing yet.</div>`;
+  const parts = [];
+  for(const i of mine){
+    let extra = "";
+    let statusOverride = null;
+    
+    if(i.status === "returned") {
+        statusOverride = "Returned";
+        extra = `<div class="meta">This item has been successfully returned.</div>`;
+    }
+    else if(i.type==="lost"){
+      try{
+        const m = await api(`/api/matches/${i.id}`);
+        if(m.matches.length){
+          statusOverride = "Match found";
+          extra = `<div class="meta"><b>AI matches</b></div>` + m.matches.slice(0,3).map(mm=>`
+            <div class="note">
+              <div style="display:flex;justify-content:space-between">
+                <b>${esc(mm.found.name)}</b><span>${Math.round(mm.score*100)}%</span>
+              </div>
+              <div class="meta">${esc(LOCS[mm.found.location_index])} · ${fmt(mm.found.timestamp)}</div>
+              <div class="meta">confidence: <span class="tag ${mm.confidence}">${mm.confidence}</span></div>
+              ${Object.entries(mm.breakdown).map(([k,v])=>`<div class="meta">${k}: ${Math.round(v*100)}%</div>`).join("")}
+              <button class="sec" data-a="why" data-l="${i.id}" data-f="${mm.found.id}">Why this match?</button>
+            </div>`).join("");
+        } else {
+          statusOverride = "Searching";
+          extra = `<div class="meta">No matches yet — we'll keep looking.</div>`;
+        }
+      }catch(e){}
+      extra += `<button class="sec" data-a="recover" data-id="${i.id}" style="margin-top:8px; color:var(--mu); border-color:var(--mu);">Mark as Recovered</button>`;
+    }
+    
+    if(i.type==="found" && i.status==="open"){
+      const pending = CLAIMS.filter(c=>c.item_id===i.id && c.status==="pending");
+      if(pending.length) statusOverride = "Claim pending";
+      for(const c of pending){
+        extra += `<div class="note"><b>${esc(c.claimant)}</b> claims this.<br>Proof: "${esc(c.proof)}"<br>
+          <button class="pri" data-a="approve" data-id="${c.id}">Verify and return</button>
+          <button class="sec" data-a="reject" data-id="${c.id}">Reject</button></div>`;
+      }
+    }
+    parts.push(card(i, extra, statusOverride));
+  }
+  return `<h2>My reports</h2><div class="grid">${parts.join("")}</div>`;
+}
+
+async function vAdmin(){
+  const s = await api("/api/stats");
+  const pending = CLAIMS.filter(c=>c.status==="pending");
+  return `<h2>Administrator dashboard</h2>
+    <div class="stats">
+      <div><b>${s.open_lost}</b>Open lost</div>
+      <div><b>${s.open_found}</b>Open found</div>
+      <div><b>${s.with_matches}</b>With matches</div>
+      <div><b>${s.pending_claims}</b>Pending claims</div>
+      <div><b>${s.returned}</b>Returned</div>
+    </div>
+    <h3 style="margin:20px 0 10px">Pending claims</h3>
+    ${pending.length?`<div class="grid">${pending.map(c=>{
+    const it = ITEMS.find(i=>i.id===c.item_id);
+    return it?card(it, `<div class="note"><b>${esc(c.claimant)}</b> — "${esc(c.proof)}"<br>
+    <button class="pri" data-a="approve" data-id="${c.id}">Verify</button>
+    <button class="sec" data-a="reject" data-id="${c.id}">Reject</button></div>`, "Claim pending"):"";
+    }).join("")}</div>`:`<div class="empty">No claims waiting.</div>`}
+    <p style="margin-top:20px"><button class="sec" data-a="reset">Reset demo data</button></p>`;
+}
+
+async function claimFlow(found_id){
+  const dlg = $("#dlg");
+  dlg.innerHTML = `<form method="dialog" id="cf">
+    <h3>Claim this item</h3>
+    <label>Something only the owner would know<textarea id="pf" rows="3" required></textarea></label>
+    <div style="display:flex;gap:8px">
+      <button class="pri" type="submit">Send claim</button>
+      <button class="sec" type="button" id="cx">Cancel</button>
+    </div></form>`;
+  dlg.showModal();
+  $("#cx").onclick = ()=>dlg.close();
+  $("#cf").onsubmit = async (e)=>{
+    e.preventDefault();
+    const proof = $("#pf").value.trim();
+    if(!proof) return;
+    await api("/api/claims", {method:"POST", body:JSON.stringify({item_id:found_id, claimant:ME, proof})});
+    dlg.close(); await refresh();
+  };
+}
+
+async function showWhy(lost_id, found_id){
+  const r = await api(`/api/explain?lost=${encodeURIComponent(lost_id)}&found=${encodeURIComponent(found_id)}`);
+  const dlg = $("#dlg");
+  dlg.innerHTML = `<div style="padding:6px">
+    <h3>Explanation</h3>
+    <p class="meta">target: <code>${esc(r.target)}</code></p>
+    <h4>HOW</h4><pre class="note">${esc(r.how)}</pre>
+    <h4>WHY</h4><pre class="note">${esc(r.why)}</pre>
+    <h4>WHY NOT</h4><pre class="note">${esc(r.why_not)}</pre>
+    <div style="text-align:right"><button class="sec" id="cx">Close</button></div>
+  </div>`;
+  dlg.showModal();
+  $("#cx").onclick = ()=>dlg.close();
+}
+
+function render(){
+  nav();
+  const v = {browse:vBrowse, lost:()=>vForm("lost"), found:()=>vForm("found"), mine:vMine, admin:vAdmin}[V];
+  const app = $("#app");
+  Promise.resolve(v()).then(html=>{
+    app.innerHTML = html;
+    if(V==="lost"||V==="found") bindForm(V);
+    if(V==="mine") app.querySelectorAll('button[data-a="why"]').forEach(b=>
+      b.onclick = ()=>showWhy(b.dataset.l, b.dataset.f));
+    if(V==="admin") app.querySelectorAll('button[data-a]').forEach(b=>{
+      b.onclick = async ()=>{
+        if(b.dataset.a==="reset" && !confirm("Reset?")) return;
+        if(b.dataset.a==="reset"){ await api("/api/reset",{method:"POST"}); }
+        else {
+          const status = b.dataset.a==="approve"?"approved":"rejected";
+          await api(`/api/claims/${b.dataset.id}`, {method:"PATCH", body:JSON.stringify({status})});
+        }
+        await refresh();
+      };
+    });
+  });
+}
+
+document.addEventListener("click", async e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  
+  if(b.dataset.v){ V = b.dataset.v; render(); }
+  
+  if(b.dataset.a==="claim") claimFlow(b.dataset.id);
+  
+  if(b.dataset.a==="recover"){
+    if(confirm("Mark this item as recovered? It will stop searching for matches.")){
+      await api(`/api/items/${b.dataset.id}`, {method:"PATCH", body:JSON.stringify({status:"returned"})});
+      await refresh();
+    }
+  }
+});
+document.addEventListener("input", e=>{
+  if(e.target.id==="q"){ Q.t = e.target.value; const p=e.target.selectionStart; render().then(()=>{
+    const q=$("#q"); if(q){q.focus(); q.setSelectionRange(p,p);} }); }
+});
+$("#role").onchange = e=>{ ROLE = e.target.value; render(); };
+
+// boot
+refresh().catch(err=>{ $("#app").innerHTML = `<div class="empty">Backend not reachable: ${esc(err.message)}<br>Start with <code>python main.py serve</code></div>`; });
+</script></body></html>
