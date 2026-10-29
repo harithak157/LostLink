@@ -110,5 +110,6 @@ Dataset coverage, AI model constraints, and the lack of a persistent relational 
 
 ## Author
 
-[haritha157]
-GitHub: [https://github.com/harithak157]
+**haritha157**
+
+GitHub: https://github.com/harithak157
